@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Network watch · VideoBLOB by d3vski</title>
+  <link rel="stylesheet" href="ui.css">
+</head>
+<body class="job">
+  <main class="shell">
+    <header class="header">
+      <img src="icons/icon48.png" alt="">
+      <div><h1>Network watch</h1><p class="byline">VideoBLOB by d3vski</p></div>
+    </header>
+    <section class="card job-panel">
+      <h2 id="watch-site">Media tab</h2>
+      <p class="muted">Watching collects media addresses from requests in the selected tab. Chrome asks for access to this site and any media hosts you add. The source list stays in this browser session. The watch ends after 10 minutes or when you close the tab or leave the site.</p>
+      <form class="field" id="add-host">
+        <label for="watch-host">Additional media host</label>
+        <div class="actions">
+          <input type="text" id="watch-host" autocomplete="off" placeholder="media.example.com" maxlength="250">
+          <button type="submit">Add</button>
+        </div>
+      </form>
+      <div class="options" id="watch-hosts" aria-live="polite"></div>
+      <div class="actions">
+        <button type="button" id="watch-start" class="primary" disabled>Allow hosts and start watch</button>
+        <button type="button" id="watch-back" hidden>Back to media tab</button>
+      </div>
+      <p class="status" id="watch-status" role="status" aria-live="polite"></p>
+    </section>
+  </main>
+  <script type="module" src="watch.js"></script>
+</body>
+</html>

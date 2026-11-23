@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>VideoBLOB media tools</title>
+  <link rel="stylesheet" href="record.css">
+  <script type="module" src="record.js"></script>
+</head>
+<body>
+  <main>
+    <header>
+      <img src="icons/icon48.png" alt="" width="42" height="42">
+      <div>VideoBLOB <small>by d3vski</small></div>
+    </header>
+    <h1 id="task">Media tools</h1>
+    <p id="context"></p>
+    <p id="help"></p>
+    <label for="filename">File name</label>
+    <input id="filename" maxlength="120" autocomplete="off">
+    <label id="consent-label" class="consent">
+      <input type="checkbox" id="consent">
+      I have permission to save this media.
+    </label>
+    <label class="consent" id="save-location" hidden>
+      <input type="checkbox" id="save-as">
+      Ask where to save
+    </label>
+    <progress id="progress" value="0" max="1" hidden></progress>
+    <div class="controls">
+      <button id="start" disabled>Start</button>
+      <button id="save" hidden>Save recording</button>
+      <button id="cancel" class="secondary" hidden>Discard</button>
+    </div>
+    <p id="message" aria-live="polite" role="status"></p>
+  </main>
+</body>
+</html>

@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Własne klipy do testowania wykrywania i pobierania plików MP4, WebM, Blob, HLS oraz DASH w rozszerzeniu VideoBLOB by d3vski.">
+  <title>Laboratorium wideo · VideoBLOB by d3vski</title>
+  <link rel="stylesheet" href="./style.css">
+  <script type="module" src="./lab.js"></script>
+</head>
+<body>
+  <header class="top">
+    <a class="wordmark" href="./" aria-label="VideoBLOB by d3vski, strona główna">
+      <span class="wordmark-icon" aria-hidden="true"></span>
+      <span>VideoBLOB <small>by d3vski</small></span>
+    </a>
+    <a class="subtle-link" href="#instrukcja">Jak testować</a>
+  </header>
+
+  <main>
+    <section class="intro" aria-labelledby="title">
+      <h1 id="title">Laboratorium wideo</h1>
+      <p>Wybierz próbkę, wczytaj ją i przeskanuj kartę w VideoBLOB. Każdy klip zawiera syntetyczny obraz i może służyć do testów pobierania.</p>
+    </section>
+
+    <section class="workspace" aria-label="Scenariusze testowe">
+      <nav class="scenarios" aria-label="Wybór scenariusza">
+        <a href="?case=mp4" data-case="mp4"><strong>MP4</strong><span>Plik z napisami</span></a>
+        <a href="?case=webm" data-case="webm"><strong>WebM</strong><span>Plik bezpośredni</span></a>
+        <a href="?case=blob" data-case="blob"><strong>Blob</strong><span>Adres tymczasowy</span></a>
+        <a href="?case=hls" data-case="hls"><strong>HLS</strong><span>Playlista i segmenty</span></a>
+        <a href="?case=dash" data-case="dash"><strong>DASH</strong><span>Manifest i ścieżki</span></a>
+      </nav>
+
+      <div class="content">
+        <noscript><p>Włącz JavaScript, aby uruchomić próbkę i obserwować wyniki.</p></noscript>
+        <section class="experiment" aria-labelledby="case-title">
+          <div class="player-frame">
+            <video id="preview" controls playsinline preload="none" poster="./media/poster.jpg" aria-label="Odtwarzacz próbki testowej"></video>
+          </div>
+
+          <div class="experiment-body">
+            <div class="case-heading">
+              <h2 id="case-title">MP4 z napisami</h2>
+              <span id="status" role="status" data-state="idle">Oczekuje</span>
+            </div>
+            <p id="case-summary"></p>
+
+            <div id="options" class="options" hidden>
+              <label for="variant">Próbka</label>
+              <select id="variant"></select>
+            </div>
+
+            <div class="actions">
+              <button type="button" id="load">Wczytaj próbkę</button>
+              <button type="button" id="revoke" class="secondary" hidden>Unieważnij adres Blob</button>
+            </div>
+            <div id="local" class="local-option" hidden>
+              <label for="file">Użyj własnego pliku wideo</label>
+              <input type="file" id="file" accept="video/*">
+            </div>
+
+            <dl class="facts">
+              <div><dt>Oczekiwany typ</dt><dd id="expected"></dd></div>
+              <div><dt>Adres próbki</dt><dd><a id="resource" href="./media/sample.mp4" target="_blank" rel="noreferrer">/media/sample.mp4</a><code id="blob-url" hidden></code></dd></div>
+            </dl>
+          </div>
+        </section>
+
+        <aside class="monitor" aria-labelledby="monitor-title">
+          <h2 id="monitor-title">Dziennik testu</h2>
+          <ol id="events" aria-live="polite" aria-label="Zdarzenia testu"></ol>
+          <p id="empty-events">Zdarzenia pojawią się po wczytaniu próbki.</p>
+        </aside>
+      </div>
+    </section>
+
+    <section id="instrukcja" class="instructions" aria-labelledby="steps-title">
+      <h2 id="steps-title">Jak testować</h2>
+      <ol>
+        <li>Wybierz format i kliknij <strong>Wczytaj próbkę</strong>. W odtwarzaczu możesz sprawdzić obraz i dźwięk.</li>
+        <li>Otwórz rozszerzenie VideoBLOB na tej karcie. Uruchom skanowanie i sprawdź, czy lista zawiera oczekiwany typ.</li>
+        <li>Pobierz wykrytą pozycję. Sprawdź rozmiar pliku i odtwórz go. W teście MP4 możesz też pobrać napisy VTT.</li>
+      </ol>
+    </section>
+  </main>
+
+  <footer><span>VideoBLOB by d3vski</span><a class="subtle-link" href="./privacy.html">Prywatność laboratorium</a></footer>
+</body>
+</html>

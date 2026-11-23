@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>VideoBLOB by d3vski</title>
+  <link rel="stylesheet" href="ui.css">
+</head>
+<body class="popup">
+  <main class="shell">
+    <header class="header">
+      <img src="icons/icon48.png" alt="">
+      <div><h1>VideoBLOB</h1><p class="byline">by d3vski</p></div>
+    </header>
+    <p class="footnote action-disclosure">Scanning reads media addresses on this tab. Recording processes media from the player locally in Chrome.</p>
+    <div class="toolbar">
+      <button type="button" id="scan" class="primary">Scan this tab</button>
+      <button type="button" id="record" disabled>Record player</button>
+    </div>
+    <p class="status" id="status" role="status" aria-live="polite"></p>
+    <section class="results" id="results" aria-label="Media found"></section>
+    <label class="checkbox save-setting" id="save-setting" hidden><input id="direct-save-as" type="checkbox"> Ask where to save</label>
+    <details class="network card" id="network">
+      <summary>Network watch</summary>
+      <p class="muted">Find media as this tab loads it. Watch this tab for 10 minutes after allowing its media hosts.</p>
+      <div class="actions">
+        <button type="button" id="watch-configure">Configure watch</button>
+        <button type="button" id="watch-stop" hidden>Stop watch</button>
+      </div>
+      <p class="muted" id="watch-status" role="status"></p>
+    </details>
+    <p class="footnote">Save media you own or have permission to download.</p>
+    <dialog id="preview">
+      <div class="actions"><h2>Preview</h2><button type="button" id="dismiss-preview">Close</button></div>
+      <div id="preview-media"></div>
+      <p class="muted" id="preview-status" role="status"></p>
+    </dialog>
+  </main>
+  <script type="module" src="popup.js"></script>
+</body>
+</html>

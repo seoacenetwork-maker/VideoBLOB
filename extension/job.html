@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>Save stream · VideoBLOB by d3vski</title>
+  <link rel="stylesheet" href="ui.css">
+</head>
+<body class="job">
+  <main class="shell">
+    <header class="header">
+      <img src="icons/icon48.png" alt="">
+      <div><h1>Save a stream</h1><p class="byline">VideoBLOB by d3vski</p></div>
+    </header>
+    <section class="card job-panel">
+      <h2 id="source">Stream source</h2>
+      <p class="muted" id="host"></p>
+      <p class="footnote">Open playlist fetches the manifest from the media host. VideoBLOB asks for access to each additional host before reading its media.</p>
+      <div class="field">
+        <button type="button" class="primary" id="inspect" disabled>Open playlist</button>
+      </div>
+      <div class="field" id="permission-panel" hidden>
+        <p class="muted" id="permission-hosts"></p>
+        <button type="button" id="grant">Allow media hosts</button>
+      </div>
+    </section>
+    <section class="card job-panel" id="controls" hidden>
+      <label class="field">Quality <select id="variant"></select></label>
+      <label class="field" id="audio-field" hidden>Audio track <select id="audio"></select></label>
+      <label class="field">File name <input id="filename" type="text" maxlength="128" autocomplete="off"></label>
+      <label class="checkbox"><input id="authorized" type="checkbox"> I own this media or have permission to save it.</label>
+      <label class="checkbox"><input id="save-as" type="checkbox"> Ask where to save</label>
+      <p class="footnote">Keep this tab open until Chrome finishes saving. VideoBLOB buffers up to 384 MiB of source media per stream.</p>
+      <div class="actions job-actions">
+        <button type="button" id="start" class="primary" disabled>Save stream</button>
+        <button type="button" id="preview-first">Preview</button>
+        <button type="button" id="save-live" hidden>Save captured</button>
+        <button type="button" id="cancel" hidden>Cancel</button>
+      </div>
+      <div id="stream-preview" hidden></div>
+    </section>
+    <p class="status" id="state" role="status" aria-live="polite"></p>
+    <progress id="progress" aria-label="Download progress" hidden></progress>
+  </main>
+  <script type="module" src="job.js"></script>
+</body>
+</html>
