@@ -1,4 +1,10 @@
 const media = "./media/";
+const publicSampleUrl = "https://seoacenetwork-maker.github.io/VideoBLOB/media/sample.mp4";
+const urlBlobLimit = 100_000_000;
+const videoTypes = new Map([
+  ["mp4", "video/mp4"], ["m4v", "video/mp4"], ["webm", "video/webm"],
+  ["mov", "video/quicktime"], ["ogv", "video/ogg"], ["mkv", "video/x-matroska"],
+]);
 
 const scenarios = {
   mp4: {
@@ -13,7 +19,7 @@ const scenarios = {
   },
   blob: {
     title: "Wideo z obiektu Blob",
-    summary: "Utwórz tymczasowy adres z klipu testowego albo własnego pliku. Unieważnij go i powtórz skanowanie.",
+    summary: "Utwórz tymczasowy adres z klipu testowego, adresu URL albo własnego pliku. Unieważnij go i powtórz skanowanie.",
     variants: [{ path: "sample.mp4", expected: "Blob · wideo" }],
   },
   hls: {
@@ -42,6 +48,11 @@ const byId = (id) => document.getElementById(id);
 const video = byId("preview");
 const variant = byId("variant");
 const chooseFile = byId("file");
+const importForm = byId("blob-import");
+const sourceInput = byId("source-url");
+const importButton = byId("import-url");
+const exampleButton = byId("example-url");
+const importError = byId("blob-import-error");
 const loadButton = byId("load");
 const revokeButton = byId("revoke");
 const status = byId("status");
@@ -56,6 +67,7 @@ document.querySelector(`[data-case=${activeCase}]`).setAttribute("aria-current",
 byId("case-title").textContent = scenario.title;
 byId("case-summary").textContent = scenario.summary;
 byId("local").hidden = activeCase !== "blob";
+importForm.hidden = activeCase !== "blob";
 byId("options").hidden = scenario.variants.length === 1;
 
 for (const sample of scenario.variants) {
@@ -99,9 +111,7 @@ function segmentCount(total) {
   return `${total} ${forms[numberForms.select(total)]}`;
 }
 
-function resetPreview() {
-  run?.abort();
-  run = undefined;
+function clearPreview() {
   if (objectUrl) {
     URL.revokeObjectURL(objectUrl);
     objectUrl = undefined;
@@ -113,6 +123,12 @@ function resetPreview() {
   video.load();
   revokeButton.hidden = true;
   updateResource();
+}
+
+function resetPreview() {
+  run?.abort();
+  run = undefined;
+  clearPreview();
 }
 
 function onMedia(target, name, signal) {
@@ -161,10 +177,84 @@ async function loadDirect(signal) {
   await attachSource(sampleUrl(), signal);
 }
 
-async function loadBlob(signal, file) {
-  const blob = file ?? await (await get(sampleUrl(), signal)).blob();
+function parseBlobSource(value) {
+  let url;
+  try {
+    url = new URL(value);
+  } catch {
+    throw new Error("Wpisz pełny adres URL pliku wideo.");
+  }
+  if (url.protocol === "blob:" && url.origin === location.origin) return url;
+  if (url.protocol === "blob:") throw new Error("Adres Blob musi być dostępny w tej samej witrynie i sesji przeglądarki.");
+  if (url.protocol !== "http:" && url.protocol !== "https:") throw new Error("Użyj adresu HTTP, HTTPS lub dostępnego tutaj adresu blob:.");
+  if (url.username || url.password) throw new Error("Adres URL nie może zawierać loginu ani hasła.");
+  return url;
+}
+
+function responseVideoType(response) {
+  const suppliedType = response.headers.get("content-type")?.split(";")[0].trim().toLowerCase();
+  if (suppliedType?.startsWith("video/")) return suppliedType;
+  if (!suppliedType || suppliedType === "application/octet-stream" || suppliedType === "application/ogg") {
+    const extension = new URL(response.url).pathname.match(/\.([a-z0-9]+)$/i)?.[1].toLowerCase();
+    return videoTypes.get(extension);
+  }
+  return undefined;
+}
+
+async function readUrlBlob(value, signal) {
+  const url = parseBlobSource(value);
+  const requestSignal = AbortSignal.any([signal, AbortSignal.timeout(45_000)]);
+  let response;
+  try {
+    response = await fetch(url, { signal: requestSignal, mode: "cors", credentials: "omit", referrerPolicy: "no-referrer" });
+  } catch {
+    requestSignal.throwIfAborted();
+    if (url.protocol === "blob:") throw new Error("Adres Blob jest nieaktywny lub niedostępny w tej karcie.");
+    throw new Error("Nie udało się pobrać pliku. Sprawdź adres, HTTPS oraz ustawienia CORS serwera.");
+  }
+
+  const limitError = "Plik przekracza limit 100 MB.";
+  const type = responseVideoType(response);
+  let problem;
+  if (!response.ok || response.status === 206) problem = `Serwer nie zwrócił pełnego pliku (HTTP ${response.status}).`;
+  else if (!response.body || response.headers.get("content-length") === "0") problem = "Plik wideo jest pusty.";
+  else if (Number(response.headers.get("content-length")) > urlBlobLimit) problem = limitError;
+  else if (!type) problem = "Ten adres nie zwrócił pliku wideo. Wklej bezpośredni adres pliku, np. MP4 lub WebM.";
+  if (problem) {
+    void response.body?.cancel().catch(() => {});
+    throw new Error(problem);
+  }
+
+  const reader = response.body.getReader();
+  const parts = [];
+  let size = 0;
+  try {
+    for (;;) {
+      const { done, value: part } = await reader.read();
+      if (done) break;
+      size += part.byteLength;
+      if (size > urlBlobLimit) {
+        void reader.cancel().catch(() => {});
+        throw new Error(limitError);
+      }
+      parts.push(part);
+    }
+  } catch (error) {
+    requestSignal.throwIfAborted();
+    if (error instanceof TypeError) throw new Error("Połączenie zostało przerwane przed ukończeniem pobierania.");
+    throw error;
+  } finally {
+    reader.releaseLock();
+  }
+
+  return new Blob(parts, { type });
+}
+
+async function loadBlob(signal, { file, url }) {
+  const blob = url ? await readUrlBlob(url, signal) : file ?? await (await get(sampleUrl(), signal)).blob();
   if (signal.aborted) return;
   if (!blob.size) throw new Error("Plik wideo jest pusty.");
+  clearPreview();
   objectUrl = URL.createObjectURL(blob);
   displayedBlob.textContent = objectUrl;
   revokeButton.hidden = false;
@@ -272,19 +362,21 @@ async function loadDash(signal) {
   await loadAdaptive(tracks, signal);
 }
 
-async function start(file) {
-  resetPreview();
+async function start(blobSource = {}) {
+  run?.abort();
+  if (activeCase !== "blob") clearPreview();
   const controller = new AbortController();
   run = controller;
-  loadButton.disabled = true;
-  chooseFile.disabled = true;
-  variant.disabled = true;
+  const controls = [loadButton, chooseFile, variant, sourceInput, importButton, exampleButton];
+  for (const control of controls) control.disabled = true;
+  importError.hidden = true;
+  importError.textContent = "";
   setStatus("loading", "Wczytywanie");
-  log("Uruchomiono próbkę.");
+  log(blobSource.url ? "Rozpoczęto pobieranie pliku z URL." : "Uruchomiono próbkę.");
   try {
     const signal = controller.signal;
     switch (activeCase) {
-      case "blob": await loadBlob(signal, file); break;
+      case "blob": await loadBlob(signal, blobSource); break;
       case "hls": await loadHls(signal); break;
       case "dash": await loadDash(signal); break;
       default: await loadDirect(signal);
@@ -293,20 +385,32 @@ async function start(file) {
   } catch (error) {
     if (error.name !== "AbortError") {
       setStatus("error", "Błąd próbki");
-      log(error.message);
+      const message = error.name === "TimeoutError" ? "Pobieranie wideo nie zakończyło się w ciągu 45 sekund." : error.message;
+      log(message);
+      if (blobSource.url) {
+        importError.textContent = message;
+        importError.hidden = false;
+      }
     }
   } finally {
     if (run === controller || !run) {
-      loadButton.disabled = false;
-      chooseFile.disabled = false;
-      variant.disabled = false;
+      for (const control of controls) control.disabled = false;
     }
   }
 }
 
 loadButton.addEventListener("click", () => start());
 chooseFile.addEventListener("change", () => {
-  if (chooseFile.files[0]) start(chooseFile.files[0]);
+  if (chooseFile.files[0]) start({ file: chooseFile.files[0] });
+});
+importForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  const url = sourceInput.value.trim();
+  if (url) start({ url });
+});
+exampleButton.addEventListener("click", () => {
+  sourceInput.value = location.hostname.endsWith(".chatgpt.site") ? publicSampleUrl : sampleUrl().href;
+  sourceInput.focus();
 });
 revokeButton.addEventListener("click", () => {
   resetPreview();

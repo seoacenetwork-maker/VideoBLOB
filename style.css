@@ -59,7 +59,7 @@ h2 { font-size: 1.3rem; letter-spacing: -.025em; margin: 0; }
 #status[data-state="ready"] { color: var(--accent); border-color: #529690; }
 #status[data-state="error"] { color: #ffb6b6; border-color: #a96666; }
 .options, .actions { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem; margin-bottom: .8rem; }
-.options label, .local-option label { font-size: .9rem; color: var(--muted); }
+.options label, .local-option label, .blob-import label { font-size: .9rem; color: var(--muted); }
 select {
   appearance: none;
   border: 1px solid var(--border);
@@ -78,6 +78,11 @@ button.secondary { background: transparent; border-color: #606b80; color: #eef3f
 button.secondary:hover { background: #2d3646; }
 .local-option { display: grid; gap: .4rem; margin: .9rem 0; }
 .local-option input { max-width: 100%; }
+.blob-import { display: grid; gap: .55rem; margin: 1rem 0; padding: .85rem 0; border-block: 1px solid var(--border); }
+.blob-import input { min-width: 0; min-height: 2.55rem; padding: .5rem .65rem; border: 1px solid #606b80; border-radius: .48rem; color: inherit; background: #11151d; }
+.blob-import p, .blob-import .actions { margin: 0; }
+#blob-import-help { color: var(--muted); font-size: .875rem; }
+.form-error { color: #ffb6b6; font-size: .9rem; }
 
 .facts { margin: .8rem 0 0; border-top: 1px solid var(--border); font-size: .9rem; }
 .facts > div { display: grid; grid-template-columns: 8rem minmax(0, 1fr); gap: .6rem; padding-top: .75rem; }
