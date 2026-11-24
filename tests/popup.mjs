@@ -58,6 +58,7 @@ const settings = join(profile, "Default");
 await mkdir(settings, { recursive: true });
 await writeFile(join(settings, "Preferences"), JSON.stringify({
   download: { default_directory: working, prompt_for_download: false },
+  profile: { default_content_setting_values: { automatic_downloads: 1 } },
   savefile: { default_directory: working }
 }));
 let extension = resolve(repo, "extension");
@@ -201,6 +202,48 @@ try {
   await clickResult("Page-created media", 1);
   await matchesDownload("Popup QA.mp4", mp4);
   console.log("Ordinary page-owned Blob verified");
+
+  const manualUrl = await evaluate(source, 'fetch("/sample.webm").then(response => response.blob()).then(blob => URL.createObjectURL(blob))');
+  const submitBlob = (value, expected) => evaluate(popup, `
+    document.querySelector("#manual-blob").open = true;
+    document.querySelector("#blob-url").value = ${JSON.stringify(value)};
+    document.querySelector("#blob-form").requestSubmit();
+  `).then(() => waitFor(() => evaluate(popup, `
+    document.querySelector("#blob-status").textContent.includes(${JSON.stringify(expected)})
+  `), expected));
+  const manualCount = () => evaluate(popup, `
+    [...document.querySelectorAll("#results article")].filter(card => card.textContent.includes("Manual URL")).length
+  `);
+  await submitBlob("blob:https://example.invalid/not-an-object-id", "Enter a valid Blob URL");
+  await submitBlob(manualUrl.replace(origin, "https://example.invalid"), "origin is not accessible");
+  const revoked = await evaluate(source, '(() => { const url = URL.createObjectURL(new Blob(["test"])); URL.revokeObjectURL(url); return url; })()');
+  await submitBlob(revoked, "its Blob was released");
+  const mediaSource = await evaluate(source, 'URL.createObjectURL(new MediaSource())');
+  await submitBlob(mediaSource, "MediaSource stream");
+  const html = await evaluate(source, 'URL.createObjectURL(new Blob(["<p>Other content</p>"], { type: "text/html" }))');
+  await submitBlob(html, "Choose a Blob containing video");
+  assert.equal(await manualCount(), 0);
+  await submitBlob(manualUrl, "Blob added");
+  await submitBlob(manualUrl, "already in the media list");
+  assert.equal(await manualCount(), 1);
+  await evaluate(popup, 'document.querySelector("#scan").click()');
+  await waitFor(() => evaluate(popup, 'document.querySelector("#scan").disabled === false'), "rescan");
+  assert.equal(await manualCount(), 1);
+  const manualCard = action => evaluate(popup, `
+    (() => {
+      const card = [...document.querySelectorAll("#results article")].find(card => card.textContent.includes("Manual URL"));
+      ${action}
+    })()
+  `);
+  await manualCard('[...card.querySelectorAll("button")].find(button => button.textContent === "Name").click()');
+  await manualCard(`
+    const field = card.querySelector("input");
+    field.value = "blob-from-address";
+    field.dispatchEvent(new Event("input", { bubbles: true }));
+  `);
+  await manualCard('[...card.querySelectorAll("button")].find(button => button.textContent === "Save").click()');
+  await matchesDownload("blob-from-address.webm", webm);
+  console.log("Pasted Blob saved byte for byte. Deduplication, rescan, malformed, foreign, revoked and MediaSource cases verified");
 
   await evaluate(popup, 'document.querySelector("#network").open = true; document.querySelector("#watch-configure").click()');
   const configTarget = await waitFor(async () => (await send("Target.getTargets")).targetInfos.find(target =>

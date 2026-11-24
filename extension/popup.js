@@ -1,4 +1,4 @@
-import { allowedHttpUrl, fileExtension, fileNameFor, mediaKind, safeName } from "./lib/media.js";
+import { allowedHttpUrl, fileExtension, fileNameFor, mediaKind, parseBlobUrl, safeName } from "./lib/media.js";
 
 const byId = id => document.getElementById(id);
 const status = byId("status");
@@ -7,6 +7,7 @@ const watchStatus = byId("watch-status");
 const preview = byId("preview");
 const downloadIds = new Map();
 const nameDrafts = new Map();
+const manualBlobs = new Map();
 let currentTab;
 let pageUrl;
 let scannedItems = [];
@@ -83,6 +84,7 @@ function makeButton(label, run, primary = false) {
 }
 
 function displayName(item) {
+  if (item.manual) return `Blob ${item.url.split("/").at(-1).slice(0, 8)}`;
   if (item.kind === "blob") return "Page-created media";
   if (["hls", "dash"].includes(item.kind)) {
     const url = allowedHttpUrl(item.url);
@@ -102,19 +104,20 @@ function normalDownloadName(value, item) {
 }
 
 function itemHost(item) {
-  if (item.kind === "blob") return pageUrl.hostname;
+  if (item.kind === "blob") return allowedHttpUrl(item.url.slice(5))?.hostname || pageUrl.hostname;
   return allowedHttpUrl(item.url)?.hostname || "";
 }
 
 function render() {
   const encrypted = new Set(scannedItems.filter(item => item.encrypted).map(item => item.url));
   const combined = new Map();
-  for (const item of [...scannedItems, ...latestWatchItems]) {
+  for (const item of [...manualBlobs.values(), ...scannedItems, ...latestWatchItems]) {
     if (!item.kind || encrypted.has(item.url)) continue;
     const prior = combined.get(item.url);
     combined.set(item.url, {
       ...prior, ...item,
       source: prior?.source || item.source,
+      documentId: prior?.manual ? prior.documentId : item.documentId,
       contentType: item.contentType || prior?.contentType || ""
     });
   }
@@ -167,16 +170,22 @@ function render() {
   }
 }
 
+async function executeInTab(func) {
+  const tabId = currentTab.id;
+  return chrome.scripting.executeScript({ target: { tabId, allFrames: true }, func })
+    .catch(() => chrome.scripting.executeScript({ target: { tabId }, func }));
+}
+
 async function scan() {
   if (!pageUrl) return;
   setStatus("Looking for media…");
   byId("scan").disabled = true;
   try {
-    const target = { tabId: currentTab.id, allFrames: true };
-    const frames = await chrome.scripting.executeScript({ target, func: scanPage })
-      .catch(() => chrome.scripting.executeScript({ target: { tabId: currentTab.id }, func: scanPage }));
+    const frames = await executeInTab(scanPage);
     scannedItems = frames.flatMap(frame => (frame.result || [])
-      .map(item => ({ ...item, frameId: frame.frameId, kind: mediaKind(item.url, item.contentType, item.hint) }))
+      .map(item => ({
+        ...item, documentId: frame.documentId, kind: mediaKind(item.url, item.contentType, item.hint)
+      }))
       .filter(item => item.encrypted || item.kind && (item.kind !== "blob" || allowedHttpUrl(item.url.slice(5)))));
     if (mediaKind(pageUrl.href)) {
       scannedItems.unshift({ url: pageUrl.href, kind: mediaKind(pageUrl.href), source: "Page" });
@@ -226,13 +235,22 @@ async function openInternal(type, details) {
   }
 }
 
-async function downloadPageBlob(url, name) {
+async function downloadPageBlob(url, name, manual) {
   try {
     if (!url.startsWith(`blob:${location.origin}/`)) return "This Blob belongs to another page.";
+    const protectedMedia = Array.from(document.querySelectorAll("video, audio"))
+      .some(media => media.mediaKeys && (media.currentSrc === url || media.src === url));
+    if (protectedMedia) return "This Blob is used by a protected media player.";
     const response = await fetch(url);
     if (!response.ok) return "The page has already released this Blob.";
     await response.body?.cancel();
     const mime = (response.headers.get("content-type") || "").split(";")[0].toLowerCase();
+    const mediaMime = /^(?:video|audio)\//.test(mime) || [
+      "", "application/octet-stream", "application/ogg", "application/x-matroska",
+      "application/x-subrip", "text/vtt"
+    ].includes(mime);
+    if (manual && !mediaMime) return "Choose a Blob containing video, audio or subtitles.";
+    if (name === null) return "";
     const extensions = {
       "video/mp4": "mp4", "video/webm": "webm", "video/ogg": "ogv", "video/quicktime": "mov",
       "audio/mp4": "m4a", "audio/webm": "weba", "audio/mpeg": "mp3", "audio/wav": "wav",
@@ -253,19 +271,80 @@ async function downloadPageBlob(url, name) {
   }
 }
 
+function getFrameOrigin() {
+  return location.origin;
+}
+
+function accessBlob(documentId, url, name, manual) {
+  return chrome.scripting.executeScript({
+    target: { tabId: currentTab.id, documentIds: [documentId] },
+    world: "MAIN",
+    func: downloadPageBlob,
+    args: [url, name, manual]
+  }).then(([result]) => result?.result ?? "Chrome could not access this Blob. Add it again from the page.");
+}
+
+async function addManualBlob(event) {
+  event.preventDefault();
+  const field = byId("blob-url");
+  const output = byId("blob-status");
+  const setResult = (message, kind = "") => {
+    output.textContent = message;
+    output.dataset.kind = kind;
+  };
+  const url = parseBlobUrl(field.value.trim());
+  if (!url) {
+    setResult("Enter a valid Blob URL from an HTTP or HTTPS page.", "error");
+    return;
+  }
+  if (scannedItems.some(item => item.encrypted && item.url === url.href)) {
+    setResult("This Blob is used by a protected media player.", "error");
+    return;
+  }
+  if (manualBlobs.has(url.href) || scannedItems.some(item => item.kind === "blob" && item.url === url.href)) {
+    field.value = "";
+    setResult("This Blob is already in the media list.");
+    return;
+  }
+  const button = byId("blob-add");
+  button.disabled = true;
+  setResult("Checking Blob availability…");
+  try {
+    const frames = await executeInTab(getFrameOrigin)
+      .catch(() => { throw new Error("Chrome could not read the active tab. Open VideoBLOB on the page again."); });
+    const matching = frames.filter(frame => frame.result === url.origin);
+    if (!matching.length) throw new Error("This Blob’s origin is not accessible from the active tab.");
+    let failure = "Chrome could not access this Blob. Add it again from the page.";
+    for (const frame of matching) {
+      try {
+        const message = await accessBlob(frame.documentId, url.href, null, true);
+        if (message) { failure = message; continue; }
+        manualBlobs.set(url.href, {
+          url: url.href, kind: "blob", documentId: frame.documentId, source: "Manual URL", manual: true
+        });
+        field.value = "";
+        render();
+        setResult("Blob added. Select Save in the media list.", "success");
+        return;
+      } catch { /* the frame may have navigated */ }
+    }
+    throw new Error(failure);
+  } catch (error) {
+    setResult(error.message || "Chrome could not access this Blob.", "error");
+  } finally {
+    button.disabled = false;
+  }
+}
+
 async function saveItem(item, name) {
   if (["hls", "dash"].includes(item.kind)) {
     await openInternal("job", { kind: item.kind, url: item.url, title: currentTab.title, tabId: currentTab.id });
     return;
   }
   if (item.kind === "blob") {
-    const [result] = await chrome.scripting.executeScript({
-      target: { tabId: currentTab.id, frameIds: [item.frameId] },
-      world: "MAIN",
-      func: downloadPageBlob,
-      args: [item.url, safeName(name)]
-    });
-    if (result?.result) throw new Error(result.result);
+    const message = await accessBlob(item.documentId, item.url, safeName(name), Boolean(item.manual))
+      .catch(() => "The Blob’s page has changed. Open VideoBLOB on that page and add it again.");
+    if (message) throw new Error(message);
     setStatus("Download requested. Check Chrome’s downloads.", "success");
     return;
   }
@@ -323,10 +402,12 @@ async function init() {
   if (currentTab?.id === undefined || !pageUrl) {
     byId("scan").disabled = true;
     byId("network").hidden = true;
+    byId("manual-blob").hidden = true;
     setStatus("Open a supported HTTP or HTTPS media page.");
     return;
   }
   byId("record").disabled = false;
+  byId("blob-add").disabled = false;
   await refreshWatch();
   if (latestWatchItems.length) {
     byId("network").open = true;
@@ -337,6 +418,7 @@ async function init() {
 }
 
 byId("scan").addEventListener("click", scan);
+byId("blob-form").addEventListener("submit", addManualBlob);
 byId("record").addEventListener("click", () => {
   openInternal("record", { tabId: currentTab.id, title: currentTab.title, url: pageUrl.href })
     .catch(() => setStatus("Could not open the recording controls.", "error"));

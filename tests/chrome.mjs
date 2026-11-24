@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { cp, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
@@ -242,8 +242,20 @@ try {
 
   const fixture = await context.newPage();
   await fixture.goto(origin + '/?case=blob');
-  await fixture.locator('#load').click();
+  await fixture.getByLabel('Adres URL pliku wideo').fill(origin + '/media/sample.mp4');
+  await fixture.getByRole('button', { name: 'Utwórz Blob z URL' }).click();
   await fixture.waitForFunction(() => document.querySelector('#preview')?.readyState >= 2);
+  const urlBlob = await fixture.locator('#preview').evaluate(async video => {
+    const source = video.currentSrc;
+    const response = await fetch(source);
+    const digest = await crypto.subtle.digest('SHA-256', await response.arrayBuffer());
+    const sha = Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, '0')).join('');
+    return { source, mime: response.headers.get('content-type'), sha };
+  });
+  assert.match(urlBlob.source, /^blob:/);
+  assert.equal(urlBlob.mime, 'video/mp4');
+  assert.equal(urlBlob.sha, createHash('sha256').update(await readFile(join(sitePath, 'media/sample.mp4'))).digest('hex'));
+  console.log('PASS lab creates a byte-identical playable Blob from a video URL');
   const tabId = await driver.evaluate(async url => (await chrome.tabs.query({ url }))[0].id, fixture.url());
   const record = await openTool('record', { title: 'VideoBLOB recorded', url: fixture.url(), tabId });
   await record.locator('#consent').check();

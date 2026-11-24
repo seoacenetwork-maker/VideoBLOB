@@ -3,7 +3,7 @@
   "name": "VideoBLOB by d3vski",
   "short_name": "VideoBLOB",
   "description": "Find and save video, audio and subtitles you have permission to download.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "minimum_chrome_version": "116",
   "permissions": ["activeTab", "scripting", "downloads", "storage"],
   "optional_permissions": ["webRequest"],

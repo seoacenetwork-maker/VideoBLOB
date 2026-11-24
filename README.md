@@ -12,13 +12,19 @@ Rozszerzenie Chrome Manifest V3 do wykrywania i zapisywania materiałów, do kt�
 
 Prywatne laboratorium Sites służy do podglądu próbek z konta właściciela. Do pełnego eksportu strumieni bez sesyjnych ciasteczek użyj GitHub Pages albo uruchom tę samą aplikację lokalnie.
 
+## Blob z adresu URL
+
+W laboratorium wybierz **Blob**, wklej bezpośredni adres HTTP(S) do pliku wideo i kliknij **Utwórz Blob z URL**. Możesz zacząć od przycisku **Wstaw adres próbki**. Przy pliku z innej domeny serwer musi zezwalać na odczyt przez CORS.
+
+Otwórz rozszerzenie na karcie, która udostępnia Blob. Wybierz **Add a Blob URL**, wklej istniejący adres `blob:`, kliknij **Add**, a następnie **Save**. Adres działa, dopóki obiekt pozostaje dostępny w tej karcie.
+
 ## Funkcje
 
 | Format lub operacja | Zachowanie |
 | --- | --- |
 | MP4, WebM i inne rozpoznane pliki wideo lub audio | Wykrywanie w bieżącej karcie, podgląd wybranych formatów w Chrome, nazwa pliku i pobranie w Chrome. |
 | VTT i SRT | Zapis wykrytych napisów jako osobnego pliku. |
-| `blob:` | Zapis dostępnego obiektu z karty źródłowej. W wybranych odtwarzaczach alternatywą jest nagrywanie obrazu i dźwięku podczas odtwarzania. |
+| `blob:` | Wykrywanie w aktywnej karcie, ręczne dodanie adresu i zapis dostępnego pliku Blob. W wybranych odtwarzaczach dostępne jest również nagrywanie obrazu i dźwięku podczas odtwarzania. |
 | HLS VOD i live bez szyfrowania | Wybór jakości z playlisty głównej, postęp, zatrzymanie przechwytywania live. HLS fMP4 zapisuje się jako MP4. MPEG-TS jest przepakowywany do MP4 dla zgodnych ścieżek i może zostać zapisany jako TS. |
 | DASH VOD bez szyfrowania | Jednookresowe manifesty fMP4 z obsługiwanymi wariantami SegmentTemplate lub SegmentList. Aplikacja łączy zgodne ścieżki obrazu i dźwięku w MP4 albo zapisuje je osobno. |
 | Audio z MP4 lub WebM | Zapis M4A. Gdy potrzebne jest kodowanie AAC, dostępność zależy od kodeków Chrome. |

@@ -8,7 +8,7 @@
 
 **Język interfejsu** — Angielski. Polski opis oferty można dodać jako tłumaczenie.
 
-**Wersja pakietu** — 0.1.0, Chrome 116 lub nowszy.
+**Wersja pakietu** — 0.1.1, Chrome 116 lub nowszy.
 
 **Pojedynczy cel** — Umożliwia użytkownikowi zapisanie na urządzeniu własnych lub autoryzowanych materiałów wideo wykrytych w aktywnej karcie Chrome.
 
@@ -23,6 +23,7 @@
 VideoBLOB by d3vski pomaga zapisać własne materiały wideo oraz filmy, które masz prawo pobrać. Otwórz stronę z filmem, kliknij ikonę rozszerzenia i wybierz wykryte źródło. Pobieranie i przetwarzanie odbywają się w Twojej przeglądarce.
 
 - Zapisuj bezpośrednie pliki MP4 i WebM, dostępne pliki z adresów Blob oraz zewnętrzne napisy WebVTT.
+- Wklej ręcznie adres `blob:` dostępny w aktywnej karcie i zapisz powiązany plik.
 - Pobieraj zgodne, niezaszyfrowane strumienie HLS na żądanie i na żywo oraz DASH na żądanie. Wybierz dostępną jakość, podejrzyj HLS i zapisz zgodne ścieżki audio i wideo jako MP4. Przy HLS live możesz zatrzymać pobieranie i zapisać przechwycony fragment.
 - Eksportuj ścieżkę M4A ze zgodnego źródła lub nagraj obraz i dźwięk udostępniane przez odtwarzacz HTML5. Nagranie zapisze się jako MP4 lub WebM zależnie od możliwości Chrome.
 
@@ -33,6 +34,7 @@ Wykrywanie zależy od sposobu udostępnienia filmu przez stronę. YouTube i mate
 VideoBLOB by d3vski helps you save your own videos and videos you have permission to download. Open a page with the video, click the extension icon, and choose a detected source. Downloads and processing take place in your browser.
 
 - Save direct MP4 and WebM files, readable file-backed Blob URLs, and external WebVTT subtitles.
+- Paste a file-backed `blob:` URL available from your active tab and save the file.
 - Download compatible unencrypted on-demand and live HLS streams and on-demand DASH streams. Choose an available quality, preview HLS, and save compatible audio and video tracks as MP4. On live HLS, stop and save the portion you captured.
 - Export an M4A track from a compatible source or record video and audio exposed by an HTML5 player. Your browser's capabilities determine whether the recording is saved as MP4 or WebM.
 
@@ -68,7 +70,7 @@ Zweryfikuj tabelę z manifestem wydania, w tym opcjonalne uprawnienia. W deklara
 
 1. Otwórz laboratorium VideoBLOB. Wybierz zakładkę **MP4**, kliknij **Wczytaj próbkę** i uruchom odtwarzanie. [Laboratorium na GitHub Pages](https://seoacenetwork-maker.github.io/VideoBLOB/)
 2. Kliknij ikonę VideoBLOB, wykonaj skan i wybierz wykryty plik MP4. Zapisz plik i sprawdź, czy odtwarza się lokalnie.
-3. Powtórz procedurę na zakładce **WebM** i **Blob**. W przypadku Blob najpierw wczytaj próbkę, ponieważ dopiero ta akcja tworzy tymczasowy adres obiektu w przeglądarce.
+3. Powtórz procedurę na zakładce **WebM** i **Blob**. W laboratorium **Blob** wczytaj próbkę lub utwórz Blob z bezpośredniego adresu pliku wideo. Skopiuj nowy adres `blob:`, wklej go w formularzu rozszerzenia na tej samej karcie i zapisz plik.
 4. W przypadku **HLS** i **DASH** wczytaj próbkę i wykonaj skan na tej samej karcie. Wybierz autoryzowane źródło z listy. Jeśli Chrome pyta o dostęp do hosta mediów, zgoda umożliwi pobranie segmentów. Oczekiwany wynik to MP4 z obrazem i dźwiękiem dla HLS fMP4, HLS MPEG-TS i próbki DASH z oddzielnymi ścieżkami. Jeśli wybierzesz dźwięk DASH, oczekiwany wynik to plik M4A. W symulacji HLS live użyj **Save captured** po pobraniu segmentów.
 
 Jeśli recenzent uruchamia źródła lokalnie, z katalogu projektu może podać laboratorium przez HTTP.

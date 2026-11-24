@@ -55,6 +55,16 @@
               <button type="button" id="load">Wczytaj próbkę</button>
               <button type="button" id="revoke" class="secondary" hidden>Unieważnij adres Blob</button>
             </div>
+            <form id="blob-import" class="blob-import" hidden>
+              <label for="source-url">Adres URL pliku wideo</label>
+              <input id="source-url" name="source-url" type="url" required autocomplete="off" spellcheck="false" placeholder="https://example.org/film.mp4" aria-describedby="blob-import-help">
+              <p id="blob-import-help">Wklej bezpośredni adres pliku wideo do 100 MB. Przy adresie z innej domeny serwer musi zezwalać na pobranie przez CORS.</p>
+              <div class="actions">
+                <button id="import-url" type="submit">Utwórz Blob z URL</button>
+                <button id="example-url" class="secondary" type="button">Wstaw adres próbki</button>
+              </div>
+              <p id="blob-import-error" class="form-error" role="alert" hidden></p>
+            </form>
             <div id="local" class="local-option" hidden>
               <label for="file">Użyj własnego pliku wideo</label>
               <input type="file" id="file" accept="video/*">

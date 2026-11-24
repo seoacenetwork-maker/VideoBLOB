@@ -25,6 +25,15 @@ export function hostPattern(value) {
   return url ? `${url.protocol}//${url.hostname}/*` : null;
 }
 
+export function parseBlobUrl(value) {
+  if (typeof value !== "string" || !value.startsWith("blob:")) return null;
+  const originUrl = allowedHttpUrl(value.slice(5));
+  if (!originUrl ||
+      !/^\/[\da-f]{8}(?:-[\da-f]{4}){3}-[\da-f]{12}$/i.test(originUrl.pathname) ||
+      originUrl.search || originUrl.hash) return null;
+  return new URL(`blob:${originUrl.origin}${originUrl.pathname}`);
+}
+
 export function mediaKind(value, contentType = "", hint = "") {
   if (typeof value === "string" && value.startsWith("blob:") && hint !== "network") return "blob";
   const url = allowedHttpUrl(value);

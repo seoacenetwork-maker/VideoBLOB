@@ -65,6 +65,9 @@ h2 { font-size: 17px; }
 .network { margin-top: 12px; }
 .network summary { cursor: pointer; font-weight: 650; }
 .network .muted { margin: 7px 0; font-size: 12px; }
+#blob-url { flex: 1; min-width: 0; }
+#blob-status[data-kind="error"] { color: #ffc2bd; }
+#blob-status[data-kind="success"] { color: var(--accent); }
 .options { display: grid; gap: 8px; margin: 9px 0; }
 .footnote { margin-top: 12px; }
 .action-disclosure { margin: 0 0 8px; }

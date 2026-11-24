@@ -21,6 +21,15 @@
     <p class="status" id="status" role="status" aria-live="polite"></p>
     <section class="results" id="results" aria-label="Media found"></section>
     <label class="checkbox save-setting" id="save-setting" hidden><input id="direct-save-as" type="checkbox"> Ask where to save</label>
+    <details class="network card" id="manual-blob">
+      <summary>Add a Blob URL</summary>
+      <p class="muted">Paste a Blob URL that is still accessible from this tab.</p>
+      <form class="actions" id="blob-form">
+        <input id="blob-url" type="text" aria-label="Blob URL" placeholder="blob:https://…" autocomplete="off" spellcheck="false" maxlength="2048" required>
+        <button id="blob-add" type="submit" disabled>Add</button>
+      </form>
+      <p class="muted" id="blob-status" role="status"></p>
+    </details>
     <details class="network card" id="network">
       <summary>Network watch</summary>
       <p class="muted">Find media as this tab loads it. Watch this tab for 10 minutes after allowing its media hosts.</p>
